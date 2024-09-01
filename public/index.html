@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>nsite</title>
+    <script type="importmap">
+      {
+        "imports": {
+          "blossom-client-sdk": "https://esm.run/blossom-client-sdk",
+          "nostr-tools": "https://esm.run/nostr-tools"
+        }
+      }
+    </script>
+  </head>
+  <body>
+    <input type="file" id="files" webkitdirectory directory multiple />
+    <button id="upload-button">Upload nsite</button>
+    <script type="module" src="./main.js"></script>
+  </body>
+</html>

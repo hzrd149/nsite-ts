@@ -1,0 +1,64 @@
+{
+  "name": "nsite-ts",
+  "version": "0.1.0",
+  "description": "A blossom server implementation written in Typescript",
+  "main": "build/index.js",
+  "type": "module",
+  "author": "hzrd149",
+  "license": "MIT",
+  "scripts": {
+    "prepack": "yarn build",
+    "start": "node build/index.js",
+    "build": "tsc",
+    "postbuild": "cd admin && yarn build",
+    "dev": "nodemon -i '**/data/**' --exec 'node' --loader @swc-node/register/esm src/index.ts",
+    "format": "prettier -w ."
+  },
+  "bin": "build/index.js",
+  "files": [
+    "build",
+    "public",
+    "admin/dist"
+  ],
+  "dependencies": {
+    "@koa/cors": "^5.0.0",
+    "@koa/router": "^12.0.1",
+    "@nostr-dev-kit/ndk": "^2.10.0",
+    "blossom-client-sdk": "^1.1.0",
+    "debug": "^4.3.5",
+    "dotenv": "^16.4.5",
+    "follow-redirects": "^1.15.6",
+    "http-errors": "1",
+    "koa": "^2.15.3",
+    "koa-mount": "^4.0.0",
+    "koa-static": "^5.0.0",
+    "mime": "^4.0.4",
+    "nostr-tools": "^2.7.2",
+    "socks-proxy-agent": "^8.0.4",
+    "websocket-polyfill": "^1.0.0",
+    "ws": "^8.18.0"
+  },
+  "devDependencies": {
+    "@changesets/cli": "^2.27.1",
+    "@swc-node/register": "^1.9.0",
+    "@swc/core": "^1.5.0",
+    "@types/better-sqlite3": "^7.6.9",
+    "@types/debug": "^4.1.12",
+    "@types/follow-redirects": "^1.14.4",
+    "@types/http-errors": "^2.0.4",
+    "@types/koa": "^2.14.0",
+    "@types/koa-basic-auth": "^2.0.6",
+    "@types/koa-mount": "^4.0.5",
+    "@types/koa-static": "^4.0.4",
+    "@types/koa__cors": "^5.0.0",
+    "@types/koa__router": "^12.0.4",
+    "@types/node": "^20.11.19",
+    "@types/ws": "^8.5.10",
+    "nodemon": "^3.0.3",
+    "prettier": "^3.3.3",
+    "typescript": "^5.3.3"
+  },
+  "resolutions": {
+    "websocket-polyfill": "1.0.0"
+  }
+}
