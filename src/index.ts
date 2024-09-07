@@ -2,19 +2,17 @@
 import "./polyfill.js";
 import Koa from "koa";
 import serve from "koa-static";
-import path from "node:path";
+import path, { join } from "node:path";
 import cors from "@koa/cors";
 import fs from "node:fs";
 import { fileURLToPath } from "node:url";
-import HttpErrors from "http-errors";
+import send from "koa-send";
 
 import logger from "./logger.js";
 import { isHttpError } from "./helpers/error.js";
 import { resolveNpubFromHostname } from "./helpers/dns.js";
-import ndk from "./ndk.js";
-import { NSITE_KIND } from "./const.js";
-import { BLOSSOM_SERVERS } from "./env.js";
-import { makeRequestWithAbort } from "./helpers/http.js";
+import { downloadSite } from "./downloader.js";
+import { downloaded } from "./cache.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -47,45 +45,21 @@ app.use(async (ctx, next) => {
   }
 });
 
-// serve nsite files
+// map pubkeys to folders in sites dir
 app.use(async (ctx, next) => {
   const pubkey = (ctx.state.pubkey = await resolveNpubFromHostname(ctx.hostname));
 
   if (pubkey) {
-    const event = await ndk.fetchEvent([
-      { kinds: [NSITE_KIND], "#d": [ctx.path, ctx.path.replace(/^\//, "")], authors: [pubkey] },
-    ]);
-    if (!event) throw new HttpErrors.NotFound("Failed to find event for path");
-
-    const sha256 = event.tags.find((t) => t[0] === "x" || t[0] === "sha256")?.[1];
-    if (!sha256) throw new HttpErrors.BadGateway("Failed to find file for path");
-
-    for (const server of BLOSSOM_SERVERS) {
-      try {
-        const { response } = await makeRequestWithAbort(new URL(sha256, server));
-        const { headers, statusCode } = response;
-
-        if (!headers || !statusCode) throw new Error("Missing headers or status code");
-
-        if (statusCode >= 200 && statusCode < 300) {
-          ctx.status = statusCode;
-
-          // @ts-expect-error
-          ctx.set(headers);
-
-          ctx.response.body = response;
-        } else {
-          // Consume response data to free up memory
-          response.resume();
-        }
-      } catch (error) {
-        // ignore error, try next server
-      }
+    if (!(await downloaded.get(pubkey))) {
+      await downloadSite(pubkey);
     }
 
-    // throw new HttpErrors.NotFound(`Unable to find ${sha256} on blossom servers`);
+    await send(ctx, join(pubkey, ctx.path), { root: "data/sites", index: "index.html" });
   } else await next();
 });
+
+// serve static sites
+app.use(serve("sites"));
 
 // serve static files from public
 try {
