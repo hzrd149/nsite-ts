@@ -51,7 +51,10 @@ app.use(async (ctx, next) => {
 
   if (pubkey) {
     if (!(await downloaded.get(pubkey))) {
-      await downloadSite(pubkey);
+      // don't wait for download
+      downloadSite(pubkey);
+
+      await downloaded.set(pubkey, true);
     }
 
     await send(ctx, join(pubkey, ctx.path), { root: "data/sites", index: "index.html" });

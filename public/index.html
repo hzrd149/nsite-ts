@@ -14,8 +14,33 @@
     </script>
   </head>
   <body>
+    <label>relays</label>
+    <br />
+    <textarea type="text" id="relays" cols="50" rows="4"></textarea>
+    <br />
+    <br />
+    <label>blossom servers</label>
+    <br />
+    <textarea type="text" id="servers" cols="50" rows="4"></textarea>
+    <br />
+    <br />
     <input type="file" id="files" webkitdirectory directory multiple />
     <button id="upload-button">Upload nsite</button>
+    <div
+      id="log"
+      style="
+        max-height: 50em;
+        max-width: 80em;
+        width: 100%;
+        border: 1px solid gray;
+        min-height: 8em;
+        margin: 0.5em 0;
+        overflow: auto;
+        font-size: 0.8em;
+        gap: 0.1em;
+        white-space: pre;
+      "
+    ></div>
     <script type="module" src="./main.js"></script>
   </body>
 </html>

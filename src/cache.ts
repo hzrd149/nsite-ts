@@ -12,5 +12,5 @@ keyvSqlite.on("error", (err) => {
   process.exit(1);
 });
 
-export const files = new Keyv({ store: keyvSqlite, ttl: 1000 * 60 * 60 * 24, namespace: "files" });
-export const downloaded = new Keyv({ store: keyvSqlite, ttl: 1000 * 30, namespace: "downloaded" });
+export const files = new Keyv({ store: keyvSqlite, namespace: "files" });
+export const downloaded = new Keyv({ store: keyvSqlite, ttl: 1000 * 60 * 5, namespace: "downloaded" });

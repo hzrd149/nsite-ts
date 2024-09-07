@@ -1,6 +1,13 @@
 import { multiServerUpload, BlossomClient } from "blossom-client-sdk";
 import { SimplePool } from "nostr-tools";
 
+const logContainer = document.getElementById("log");
+function log(...args) {
+  const el = document.createElement("div");
+  el.innerText = args.join(" ");
+  logContainer.appendChild(el);
+}
+
 const uploadButton = document.getElementById("upload-button");
 
 /** @type {HTMLInputElement} */
@@ -47,8 +54,8 @@ async function readFileSystemEntry(entry) {
 
       files.push({ file, path, sha256 });
     } catch (e) {
-      console.log("Failed to add" + entry.fullPath);
-      console.log(e);
+      log("Failed to add" + entry.fullPath);
+      log(e.message);
     }
   } else if (entry instanceof FileSystemDirectoryEntry && entry.isDirectory) {
     const entries = await readFileSystemDirectory(entry);
@@ -79,11 +86,14 @@ const pool = new SimplePool();
  * uploads a file system entry to blossom servers
  * @param {{file:File, path:string}} files
  * @param {import("blossom-client-sdk").Signer} signer
+ * @param {*} auth
+ * @param {string[]} servers
+ * @param {string[]} relays
  */
-async function uploadFiles(files, signer, auth) {
+async function uploadFiles(files, signer, auth, servers, relays) {
   for (const { file, path, sha256 } of files) {
     try {
-      const upload = multiServerUpload(["https://cdn.hzrd149.com", "https://cdn.satellite.earth"], file, signer, auth);
+      const upload = multiServerUpload(servers, file, signer, auth);
 
       let published = false;
       for await (let { blob } of upload) {
@@ -97,13 +107,13 @@ async function uploadFiles(files, signer, auth) {
               ["x", sha256],
             ],
           });
-          await pool.publish(["wss://nostrue.com"], signed);
+          await pool.publish(relays, signed);
 
-          console.log("Published", path, sha256, signed);
+          log("Published", path, sha256, signed.id);
         }
       }
     } catch (error) {
-      console.warn(`Failed to upload ${path}`, error);
+      log(`Failed to upload ${path}`, error);
     }
   }
 }
@@ -112,6 +122,8 @@ uploadButton.addEventListener("click", async () => {
   if (!window.nostr) return alert("Missing NIP-07 signer");
 
   const signer = (draft) => window.nostr.signEvent(draft);
+  const relays = document.getElementById("relays").value.split(/\n|,/);
+  const servers = document.getElementById("servers").value.split(/\n|,/);
 
   try {
     if (filesInput.files) {
@@ -120,16 +132,9 @@ uploadButton.addEventListener("click", async () => {
       // strip leading dir
       for (const file of files) file.path = file.path.replace(/^[^\/]+\//, "/");
 
-      console.log(`Found files`, files);
+      log(`Found ${files.length} files`);
 
-      // const auth = await BlossomClient.createUploadAuth(
-      //   files.map((f) => f.sha256),
-      //   signer,
-      // );
-
-      // console.log("Created upload auth", auth);
-
-      await uploadFiles(files, signer);
+      await uploadFiles(files, signer, undefined, servers, relays);
     }
   } catch (error) {
     alert(`Failed to upload files: ${error.message}`);

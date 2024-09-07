@@ -36,8 +36,6 @@ async function downloadFile(sha256: string, servers = BLOSSOM_SERVERS) {
 }
 
 export async function downloadSite(pubkey: string) {
-  if (await downloaded.get(pubkey)) return;
-
   const user = await ndk.getUser({ pubkey });
 
   const blossomServers = await ndk.fetchEvent([{ kinds: [USER_BLOSSOM_SERVER_LIST_KIND], authors: [pubkey] }]);
