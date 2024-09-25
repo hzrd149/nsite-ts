@@ -13,7 +13,8 @@ import { resolveNpubFromHostname } from "./helpers/dns.js";
 import { getNsiteBlobs } from "./events.js";
 import { downloadFile, getUserBlossomServers } from "./blossom.js";
 import { BLOSSOM_SERVERS } from "./env.js";
-import { userServers } from "./cache.js";
+import { userRelays, userServers } from "./cache.js";
+import { getUserOutboxes } from "./ndk.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -49,8 +50,16 @@ app.use(async (ctx, next) => {
   const pubkey = (ctx.state.pubkey = await resolveNpubFromHostname(ctx.hostname));
 
   if (pubkey) {
+    console.log(`${pubkey}: Fetching relays`);
+
+    let relays = await userRelays.get<string[] | undefined>(pubkey);
+    if (!relays) {
+      relays = await getUserOutboxes(pubkey);
+      if (relays) await userRelays.set(pubkey, relays);
+    }
+
     console.log(`${pubkey}: Searching for ${ctx.path}`);
-    const blobs = await getNsiteBlobs(pubkey, ctx.path);
+    const blobs = await getNsiteBlobs(pubkey, ctx.path, relays);
 
     if (blobs.length === 0) {
       ctx.status = 404;
@@ -58,7 +67,7 @@ app.use(async (ctx, next) => {
       return;
     }
 
-    let servers = await userServers.get<string[]>(pubkey);
+    let servers = await userServers.get<string[] | undefined>(pubkey);
     if (!servers) {
       console.log(`${pubkey}: Searching for blossom servers`);
       servers = (await getUserBlossomServers(pubkey)) ?? [];

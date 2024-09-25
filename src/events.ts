@@ -1,6 +1,7 @@
 import { extname, isAbsolute, join } from "path";
 import { NSITE_KIND } from "./const.js";
 import ndk from "./ndk.js";
+import { NDKRelaySet } from "@nostr-dev-kit/ndk";
 
 export function getSearchPaths(path: string) {
   const paths = [path];
@@ -10,10 +11,10 @@ export function getSearchPaths(path: string) {
 
   // also look for relative paths
   for (const p of Array.from(paths)) {
-    if (isAbsolute(p)) paths.push(path.replace(/^\//, ""));
+    if (isAbsolute(p)) paths.push(p.replace(/^\//, ""));
   }
 
-  return paths;
+  return paths.filter((p) => !!p);
 }
 
 export function parseNsiteEvent(event: { pubkey: string; tags: string[][] }) {
@@ -28,9 +29,13 @@ export function parseNsiteEvent(event: { pubkey: string; tags: string[][] }) {
     };
 }
 
-export async function getNsiteBlobs(pubkey: string, path: string) {
+export async function getNsiteBlobs(pubkey: string, path: string, relays?: string[]) {
   const paths = getSearchPaths(path);
-  const events = await ndk.fetchEvents({ kinds: [NSITE_KIND], "#d": paths, authors: [pubkey] });
+  const events = await ndk.fetchEvents(
+    { kinds: [NSITE_KIND], "#d": paths, authors: [pubkey] },
+    {},
+    relays && NDKRelaySet.fromRelayUrls(relays, ndk, true),
+  );
 
   return Array.from(events)
     .map(parseNsiteEvent)

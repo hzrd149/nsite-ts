@@ -15,7 +15,8 @@ services:
 
   nsite:
     build: .
+    image: ghcr.io/hzrd149/nsite-ts:master
     environment:
-      NOSTR_RELAYS: wss://nos.lol,wss://relay.damus.io
+      LOOKUP_RELAYS: wss://user.kindpag.es,wss://purplepag.es
     ports:
       - 3000:80
