@@ -2,21 +2,26 @@
 import "./polyfill.js";
 import Koa from "koa";
 import serve from "koa-static";
-import path, { join } from "node:path";
+import path from "node:path";
 import cors from "@koa/cors";
 import fs from "node:fs";
 import { fileURLToPath } from "node:url";
-import send from "koa-send";
+import mime from "mime";
+import morgan from "koa-morgan";
 
-import logger from "./logger.js";
-import { isHttpError } from "./helpers/error.js";
 import { resolveNpubFromHostname } from "./helpers/dns.js";
-import { downloadSite } from "./downloader.js";
-import { downloaded } from "./cache.js";
+import { getNsiteBlobs } from "./events.js";
+import { downloadFile, getUserBlossomServers } from "./blossom.js";
+import { BLOSSOM_SERVERS } from "./env.js";
+import { userServers } from "./cache.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const app = new Koa();
+
+morgan.token("host", (req) => req.headers.host ?? "");
+
+app.use(morgan(":method :host:url :status :response-time ms - :res[content-length]"));
 
 // set CORS headers
 app.use(
@@ -33,15 +38,9 @@ app.use(async (ctx, next) => {
   try {
     await next();
   } catch (err) {
-    if (isHttpError(err)) {
-      const status = (ctx.status = err.status || 500);
-      if (status >= 500) console.error(err.stack);
-      ctx.body = status > 500 ? { message: "Something went wrong" } : { message: err.message };
-    } else {
-      console.log(err);
-      ctx.status = 500;
-      ctx.body = { message: "Something went wrong" };
-    }
+    console.log(err);
+    ctx.status = 500;
+    ctx.body = { message: "Something went wrong" };
   }
 });
 
@@ -50,19 +49,44 @@ app.use(async (ctx, next) => {
   const pubkey = (ctx.state.pubkey = await resolveNpubFromHostname(ctx.hostname));
 
   if (pubkey) {
-    if (!(await downloaded.get(pubkey))) {
-      // don't wait for download
-      downloadSite(pubkey);
+    console.log(`${pubkey}: Searching for ${ctx.path}`);
+    const blobs = await getNsiteBlobs(pubkey, ctx.path);
 
-      await downloaded.set(pubkey, true);
+    if (blobs.length === 0) {
+      ctx.status = 404;
+      ctx.body = "Not Found";
+      return;
     }
 
-    await send(ctx, join(pubkey, ctx.path), { root: "data/sites", index: "index.html" });
+    let servers = await userServers.get<string[]>(pubkey);
+    if (!servers) {
+      console.log(`${pubkey}: Searching for blossom servers`);
+      servers = (await getUserBlossomServers(pubkey)) ?? [];
+
+      await userServers.set(pubkey, servers);
+    }
+    servers.push(...BLOSSOM_SERVERS);
+
+    for (const blob of blobs) {
+      const res = await downloadFile(blob.sha256, servers);
+
+      if (res) {
+        const type = mime.getType(blob.path);
+        if (type) ctx.set("Content-Type", type);
+        else if (res.headers["content-type"]) ctx.set("content-type", res.headers["content-type"]);
+
+        // pass headers along
+        if (res.headers["content-length"]) ctx.set("content-length", res.headers["content-length"]);
+
+        ctx.body = res;
+        return;
+      }
+    }
+
+    ctx.status = 500;
+    ctx.body = "Failed to download blob";
   } else await next();
 });
-
-// serve static sites
-app.use(serve("sites"));
 
 // serve static files from public
 try {
@@ -74,11 +98,12 @@ try {
   app.use(serve(www));
 }
 
-app.listen(process.env.PORT || 3000);
-logger("Started on port", process.env.PORT || 3000);
+app.listen(process.env.PORT || 3000, () => {
+  console.log("Started on port", process.env.PORT || 3000);
+});
 
 async function shutdown() {
-  logger("Shutting down...");
+  console.log("Shutting down...");
   process.exit(0);
 }
 

@@ -1,0 +1,21 @@
+version: "3.7"
+
+volumes:
+  cache: {}
+
+services:
+  nginx:
+    image: nginx:alpine
+    ports:
+      - 8080:80
+    volumes:
+      - cache:/var/cache/nginx
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf
+      - ./nginx/default.conf:/etc/nginx/conf.d/default.conf
+
+  nsite:
+    build: .
+    environment:
+      NOSTR_RELAYS: wss://nos.lol,wss://relay.damus.io
+    ports:
+      - 3000:80

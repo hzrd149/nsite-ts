@@ -1,16 +1,43 @@
 import Keyv from "keyv";
-import KeyvSqlite from "@keyv/sqlite";
 import pfs from "fs/promises";
+import { CACHE_PATH } from "./env.js";
 
 try {
   await pfs.mkdir("data");
 } catch (error) {}
 
-const keyvSqlite = new KeyvSqlite({ dialect: "sqlite", uri: "./data/cache.db" });
-keyvSqlite.on("error", (err) => {
+async function createStore() {
+  if (!CACHE_PATH || CACHE_PATH === "in-memory") return undefined;
+  else if (CACHE_PATH.startsWith("redis://")) {
+    const { default: KeyvRedis } = await import("@keyv/redis");
+    return new KeyvRedis(CACHE_PATH);
+  } else if (CACHE_PATH.startsWith("sqlite://")) {
+    const { default: KeyvSqlite } = await import("@keyv/sqlite");
+    return new KeyvSqlite(CACHE_PATH);
+  }
+}
+
+const store = await createStore();
+
+store?.on("error", (err) => {
   console.log("Connection Error", err);
   process.exit(1);
 });
 
-export const files = new Keyv({ store: keyvSqlite, namespace: "files" });
-export const downloaded = new Keyv({ store: keyvSqlite, ttl: 1000 * 60 * 5, namespace: "downloaded" });
+const opts = store ? { store } : {};
+
+/** pubkey -> blossom servers */
+export const userServers = new Keyv({
+  ...opts,
+  namespace: "servers",
+  // cache servers for an hour
+  ttl: 60 * 60 * 1000,
+});
+
+/** pubkey -> relays */
+export const userRelays = new Keyv({
+  ...opts,
+  namespace: "relays",
+  // cache relays for an hour
+  ttl: 60 * 60 * 1000,
+});
