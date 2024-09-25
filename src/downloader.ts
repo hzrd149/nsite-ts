@@ -63,7 +63,7 @@ export async function downloadSite(pubkey: string) {
     try {
       const res = await downloadFile(sha256, servers);
 
-      console.log(`Downloading ${pubkey}${path}`);
+      console.log(`Downloading ${join(pubkey, path)}`);
       res.pipe(fs.createWriteStream(join("data/sites", pubkey, path)));
 
       await files.set(join(pubkey, path), sha256);
