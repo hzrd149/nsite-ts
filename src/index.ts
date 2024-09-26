@@ -70,9 +70,16 @@ app.use(async (ctx, next) => {
     let servers = await userServers.get<string[] | undefined>(pubkey);
     if (!servers) {
       console.log(`${pubkey}: Searching for blossom servers`);
-      servers = (await getUserBlossomServers(pubkey)) ?? [];
+      servers = await getUserBlossomServers(pubkey, relays);
 
-      await userServers.set(pubkey, servers);
+      if (servers) {
+        await userServers.set(pubkey, servers);
+        console.log(`${pubkey}: Found ${servers.length} servers`);
+      } else {
+        servers = [];
+        await userServers.set(pubkey, [], 30_000);
+        console.log(`${pubkey}: Failed to find servers`);
+      }
     }
     servers.push(...BLOSSOM_SERVERS);
 
@@ -93,7 +100,7 @@ app.use(async (ctx, next) => {
     }
 
     ctx.status = 500;
-    ctx.body = "Failed to download blob";
+    ctx.body = "Failed to find blob";
   } else await next();
 });
 
