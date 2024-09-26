@@ -26,6 +26,14 @@ store?.on("error", (err) => {
 
 const opts = store ? { store } : {};
 
+/** domain -> pubkey */
+export const userDomains = new Keyv({
+  ...opts,
+  namespace: "domains",
+  // cache domains for an hour
+  ttl: 60 * 60 * 1000,
+});
+
 /** pubkey -> blossom servers */
 export const userServers = new Keyv({
   ...opts,

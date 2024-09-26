@@ -1,18 +1,12 @@
 import { extname, isAbsolute, join } from "path";
 import { NSITE_KIND } from "./const.js";
-import ndk from "./ndk.js";
-import { NDKRelaySet } from "@nostr-dev-kit/ndk";
+import { requestEvents } from "./nostr.js";
 
 export function getSearchPaths(path: string) {
   const paths = [path];
 
   // if the path does not have an extension, also look for index.html
   if (extname(path) === "") paths.push(join(path, "index.html"));
-
-  // also look for relative paths
-  for (const p of Array.from(paths)) {
-    if (isAbsolute(p)) paths.push(p.replace(/^\//, ""));
-  }
 
   return paths.filter((p) => !!p);
 }
@@ -29,13 +23,10 @@ export function parseNsiteEvent(event: { pubkey: string; tags: string[][] }) {
     };
 }
 
-export async function getNsiteBlobs(pubkey: string, path: string, relays?: string[]) {
-  const paths = getSearchPaths(path);
-  const events = await ndk.fetchEvents(
-    { kinds: [NSITE_KIND], "#d": paths, authors: [pubkey] },
-    {},
-    relays && NDKRelaySet.fromRelayUrls(relays, ndk, true),
-  );
+export async function getNsiteBlobs(pubkey: string, path: string, relays: string[]) {
+  // NOTE: hack, remove "/" paths since it breaks some relays
+  const paths = getSearchPaths(path).filter((p) => p !== "/");
+  const events = await requestEvents(relays, { kinds: [NSITE_KIND], "#d": paths, authors: [pubkey] });
 
   return Array.from(events)
     .map(parseNsiteEvent)

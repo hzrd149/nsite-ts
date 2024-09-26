@@ -1,16 +1,11 @@
 import { getServersFromServerListEvent, USER_BLOSSOM_SERVER_LIST_KIND } from "blossom-client-sdk";
-import { NDKRelaySet } from "@nostr-dev-kit/ndk";
 
-import ndk from "./ndk.js";
 import { BLOSSOM_SERVERS, MAX_FILE_SIZE } from "./env.js";
 import { makeRequestWithAbort } from "./helpers/http.js";
+import pool from "./nostr.js";
 
-export async function getUserBlossomServers(pubkey: string, relays?: string[]) {
-  const blossomServersEvent = await ndk.fetchEvent(
-    [{ kinds: [USER_BLOSSOM_SERVER_LIST_KIND], authors: [pubkey] }],
-    {},
-    relays ? NDKRelaySet.fromRelayUrls(relays, ndk, true) : undefined,
-  );
+export async function getUserBlossomServers(pubkey: string, relays: string[]) {
+  const blossomServersEvent = await pool.get(relays, { kinds: [USER_BLOSSOM_SERVER_LIST_KIND], authors: [pubkey] });
 
   return blossomServersEvent ? getServersFromServerListEvent(blossomServersEvent).map((u) => u.toString()) : undefined;
 }

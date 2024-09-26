@@ -10,11 +10,13 @@ import mime from "mime";
 import morgan from "koa-morgan";
 
 import { resolveNpubFromHostname } from "./helpers/dns.js";
-import { getNsiteBlobs } from "./events.js";
+import { getNsiteBlobs, parseNsiteEvent } from "./events.js";
 import { downloadFile, getUserBlossomServers } from "./blossom.js";
-import { BLOSSOM_SERVERS } from "./env.js";
-import { userRelays, userServers } from "./cache.js";
-import { getUserOutboxes } from "./ndk.js";
+import { BLOSSOM_SERVERS, NGINX_CACHE_DIR, SUBSCRIPTION_RELAYS } from "./env.js";
+import { userDomains, userRelays, userServers } from "./cache.js";
+import { NSITE_KIND } from "./const.js";
+import { invalidatePubkeyPath } from "./nginx.js";
+import pool, { getUserOutboxes, subscribeForEvents } from "./nostr.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -45,12 +47,29 @@ app.use(async (ctx, next) => {
   }
 });
 
-// map pubkeys to folders in sites dir
+// handle nsite requests
 app.use(async (ctx, next) => {
-  const pubkey = (ctx.state.pubkey = await resolveNpubFromHostname(ctx.hostname));
+  let pubkey = await userDomains.get<string | undefined>(ctx.hostname);
+
+  // resolve pubkey if not in cache
+  if (!pubkey) {
+    console.log(`${ctx.hostname}: Resolving`);
+    pubkey = await resolveNpubFromHostname(ctx.hostname);
+
+    if (pubkey) {
+      await userDomains.set(ctx.hostname, pubkey);
+      console.log(`${ctx.hostname}: Found ${pubkey}`);
+    } else {
+      await userDomains.set(ctx.hostname, "");
+    }
+  }
 
   if (pubkey) {
+    ctx.state.pubkey = pubkey;
+
     let relays = await userRelays.get<string[] | undefined>(pubkey);
+
+    // fetch relays if not in cache
     if (!relays) {
       console.log(`${pubkey}: Fetching relays`);
 
@@ -69,12 +88,15 @@ app.use(async (ctx, next) => {
     const blobs = await getNsiteBlobs(pubkey, ctx.path, relays);
 
     if (blobs.length === 0) {
+      console.log(`${pubkey}: Found 0 events`);
       ctx.status = 404;
       ctx.body = "Not Found";
       return;
     }
 
     let servers = await userServers.get<string[] | undefined>(pubkey);
+
+    // fetch blossom servers if not in cache
     if (!servers) {
       console.log(`${pubkey}: Searching for blossom servers`);
       servers = await getUserBlossomServers(pubkey, relays);
@@ -88,6 +110,8 @@ app.use(async (ctx, next) => {
         console.log(`${pubkey}: Failed to find servers`);
       }
     }
+
+    // always fetch from additional servers
     servers.push(...BLOSSOM_SERVERS);
 
     for (const blob of blobs) {
@@ -121,12 +145,40 @@ try {
   app.use(serve(www));
 }
 
-app.listen(process.env.PORT || 3000, () => {
-  console.log("Started on port", process.env.PORT || 3000);
+app.listen(
+  {
+    port: process.env.NSITE_PORT || 3000,
+    host: process.env.NSITE_HOST || "0.0.0.0",
+  },
+  () => {
+    console.log("Started on port", process.env.PORT || 3000);
+  },
+);
+
+// invalidate nginx cache on new events
+if (NGINX_CACHE_DIR && SUBSCRIPTION_RELAYS.length > 0) {
+  console.log(`Listening for new nsite events`);
+
+  subscribeForEvents(SUBSCRIPTION_RELAYS, async (event) => {
+    try {
+      const nsite = parseNsiteEvent(event);
+      if (nsite) {
+        console.log(`${nsite.pubkey}: Invalidating ${nsite.path}`);
+        await invalidatePubkeyPath(nsite.pubkey, nsite.path);
+      }
+    } catch (error) {
+      console.log(`Failed to invalidate ${event.id}`);
+    }
+  });
+}
+
+process.on("unhandledRejection", (reason, promise) => {
+  console.error("Unhandled Rejection at:", promise, "reason:", reason);
 });
 
 async function shutdown() {
   console.log("Shutting down...");
+  pool.destroy();
   process.exit(0);
 }
 

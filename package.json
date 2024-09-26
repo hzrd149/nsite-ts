@@ -21,7 +21,6 @@
     "@keyv/redis": "^3.0.1",
     "@keyv/sqlite": "^4.0.1",
     "@koa/cors": "^5.0.0",
-    "@nostr-dev-kit/ndk": "^2.10.0",
     "blossom-client-sdk": "^1.1.1",
     "dotenv": "^16.4.5",
     "follow-redirects": "^1.15.6",
