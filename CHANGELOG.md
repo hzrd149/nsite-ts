@@ -1,5 +1,17 @@
 # nsite-ts
 
+## 0.2.0
+
+### Minor Changes
+
+- b7b43cf: Bundle nginx in docker image
+- b7b43cf: Add NGINX_CACHE_DIR for invalidating nginx cache
+- b7b43cf: Add SUBSCRIPTION_RELAYS for listening for new events
+
+### Patch Changes
+
+- 48ae388: Use users relays when searching for blossom servers
+
 ## 0.1.0
 
 ### Minor Changes
