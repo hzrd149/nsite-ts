@@ -50,12 +50,19 @@ app.use(async (ctx, next) => {
   const pubkey = (ctx.state.pubkey = await resolveNpubFromHostname(ctx.hostname));
 
   if (pubkey) {
-    console.log(`${pubkey}: Fetching relays`);
-
     let relays = await userRelays.get<string[] | undefined>(pubkey);
     if (!relays) {
+      console.log(`${pubkey}: Fetching relays`);
+
       relays = await getUserOutboxes(pubkey);
-      if (relays) await userRelays.set(pubkey, relays);
+      if (relays) {
+        await userRelays.set(pubkey, relays);
+        console.log(`${pubkey}: Found ${relays.length} relays`);
+      } else {
+        relays = [];
+        await userServers.set(pubkey, [], 30_000);
+        console.log(`${pubkey}: Failed to find relays`);
+      }
     }
 
     console.log(`${pubkey}: Searching for ${ctx.path}`);
