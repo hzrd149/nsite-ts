@@ -36,6 +36,7 @@ COPY --from=prod-deps /app/node_modules /app/node_modules
 COPY --from=build ./app/build ./build
 
 COPY ./public ./public
+COPY ./proxy.pac .
 
 VOLUME [ "/var/cache/nginx" ]
 
