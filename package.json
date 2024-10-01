@@ -30,8 +30,8 @@
     "koa-static": "^5.0.0",
     "mime": "^4.0.4",
     "nostr-tools": "^2.7.2",
+    "pac-proxy-agent": "^7.0.2",
     "proxy-agent": "^6.4.0",
-    "proxy-from-env": "^1.1.0",
     "websocket-polyfill": "^1.0.0",
     "ws": "^8.18.0",
     "xbytes": "^1.9.1"

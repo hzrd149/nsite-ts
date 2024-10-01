@@ -47,12 +47,12 @@ importers:
       nostr-tools:
         specifier: ^2.7.2
         version: 2.7.2(typescript@5.6.2)
+      pac-proxy-agent:
+        specifier: ^7.0.2
+        version: 7.0.2
       proxy-agent:
         specifier: ^6.4.0
         version: 6.4.0
-      proxy-from-env:
-        specifier: ^1.1.0
-        version: 1.1.0
       websocket-polyfill:
         specifier: 1.0.0
         version: 1.0.0

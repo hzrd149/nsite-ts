@@ -39,8 +39,8 @@ function FindProxyForURL(url, host)
 }
 ```
 
-Start server with `PROXY` variable
+Start server with `PAC_PROXY` variable
 
 ```sh
-PROXY=pac+file://proxy.pac
+PAC_PROXY=file://$(pwd)/proxy.pac node .
 ```

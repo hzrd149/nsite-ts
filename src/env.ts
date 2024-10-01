@@ -13,4 +13,18 @@ const MAX_FILE_SIZE = process.env.MAX_FILE_SIZE ? xbytes.parseSize(process.env.M
 const NGINX_CACHE_DIR = process.env.NGINX_CACHE_DIR;
 const CACHE_PATH = process.env.CACHE_PATH;
 
-export { SUBSCRIPTION_RELAYS, LOOKUP_RELAYS, BLOSSOM_SERVERS, MAX_FILE_SIZE, NGINX_CACHE_DIR, CACHE_PATH };
+const PAC_PROXY = process.env.PAC_PROXY;
+const TOR_PROXY = process.env.TOR_PROXY;
+const I2P_PROXY = process.env.I2P_PROXY;
+
+export {
+  SUBSCRIPTION_RELAYS,
+  LOOKUP_RELAYS,
+  BLOSSOM_SERVERS,
+  MAX_FILE_SIZE,
+  NGINX_CACHE_DIR,
+  CACHE_PATH,
+  PAC_PROXY,
+  TOR_PROXY,
+  I2P_PROXY,
+};
