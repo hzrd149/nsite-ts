@@ -25,7 +25,6 @@ import {
 import { userDomains, userRelays, userServers } from "./cache.js";
 import { invalidatePubkeyPath } from "./nginx.js";
 import pool, { getUserOutboxes, subscribeForEvents } from "./nostr.js";
-import { getScreenshotPath, hasScreenshot, removeScreenshot, takeScreenshot } from "./screenshots.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -165,6 +164,7 @@ if (ENABLE_SCREENSHOTS) {
       const [pubkey, etx] = basename(ctx.path).split(".");
 
       if (pubkey) {
+        const { hasScreenshot, takeScreenshot, getScreenshotPath } = await import("./screenshots.js");
         if (!(await hasScreenshot(pubkey))) await takeScreenshot(pubkey);
 
         await send(ctx, getScreenshotPath(pubkey));
@@ -190,7 +190,8 @@ if (SUBSCRIPTION_RELAYS.length > 0) {
         }
 
         // invalidate screenshot for nsite
-        if ((ENABLE_SCREENSHOTS && nsite.path === "/") || nsite.path === "/index.html") {
+        if (ENABLE_SCREENSHOTS && (nsite.path === "/" || nsite.path === "/index.html")) {
+          const { removeScreenshot } = await import("./screenshots.js");
           await removeScreenshot(nsite.pubkey);
         }
       }

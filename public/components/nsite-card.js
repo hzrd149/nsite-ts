@@ -58,10 +58,12 @@ export class NsiteCard extends LitElement {
   static properties = {
     nsite: { type: Object },
     profile: { state: true, type: Object },
+    hasThumb: { state: true, type: Boolean },
   };
 
   constructor() {
     super();
+    this.hasThumb = true;
   }
 
   connectedCallback() {
@@ -72,14 +74,22 @@ export class NsiteCard extends LitElement {
     });
   }
 
+  handleError() {
+    this.hasThumb = false;
+  }
+
   render() {
     const npub = nip19.npubEncode(this.nsite.pubkey);
     const url = new URL("/", `${location.protocol}//${npub}.${location.host}`);
 
     return html`
-      <a class="thumb" href="${url}" target="_blank">
-        <img src="/screenshot/${this.nsite.pubkey}.png" />
-      </a>
+      ${this.hasThumb
+        ? html`
+            <a class="thumb" href="${url}" target="_blank">
+              <img src="/screenshot/${this.nsite.pubkey}.png" @error=${this.handleError} />
+            </a>
+          `
+        : undefined}
       <a class="title" href="${url}" target="_blank">
         ${this.profile && html`<img src="${this.profile.image || this.profile.picture}" class="avatar" />`}
         <div>

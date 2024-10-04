@@ -1,6 +1,5 @@
 version: "3.7"
 
-
 services:
   nsite:
     build: .
@@ -9,10 +8,6 @@ services:
       LOOKUP_RELAYS: wss://user.kindpag.es,wss://purplepag.es
       SUBSCRIPTION_RELAYS: wss://nostrue.com/,wss://nos.lol/,wss://relay.damus.io/,wss://purplerelay.com/
     volumes:
-      - type: tmpfs
-        target: /screenshots
-        tmpfs:
-          size: 100M
       - type: tmpfs
         target: /var/cache/nginx
         tmpfs:
