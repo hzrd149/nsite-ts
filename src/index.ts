@@ -136,6 +136,7 @@ app.use(async (ctx, next) => {
 
         // pass headers along
         if (res.headers["content-length"]) ctx.set("content-length", res.headers["content-length"]);
+        if (res.headers["last-modified"]) ctx.set("last-modified", res.headers["last-modified"]);
 
         ctx.status = 200;
         ctx.body = res;
