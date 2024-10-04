@@ -1,5 +1,16 @@
 # nsite-ts
 
+## 0.3.0
+
+### Minor Changes
+
+- 145f89d: Add support for ALL_PROXY env variable
+- f25e240: Add screenshots for nsites
+
+### Patch Changes
+
+- 87fecfc: Update landing page
+
 ## 0.2.0
 
 ### Minor Changes
