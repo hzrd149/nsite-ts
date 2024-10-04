@@ -15,16 +15,17 @@ export async function downloadFile(sha256: string, servers = BLOSSOM_SERVERS) {
   for (const server of servers) {
     try {
       const { response } = await makeRequestWithAbort(new URL(sha256, server));
-      if (!response.statusCode) throw new Error("Missing headers or status code");
 
-      const size = response.headers["content-length"];
-      if (size && parseInt(size) > MAX_FILE_SIZE) {
-        throw new Error("File too large");
-      }
+      try {
+        if (!response.statusCode) throw new Error("Missing headers or status code");
 
-      if (response.statusCode >= 200 && response.statusCode < 300) {
-        return response;
-      } else {
+        const size = response.headers["content-length"];
+        if (size && parseInt(size) > MAX_FILE_SIZE) throw new Error("File too large");
+
+        if (response.statusCode >= 200 && response.statusCode < 300) {
+          return response;
+        } else throw new Error("Request failed");
+      } catch (error) {
         // Consume response data to free up memory
         response.resume();
       }
