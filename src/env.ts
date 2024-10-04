@@ -24,6 +24,7 @@ const NSITE_HOST = process.env.NSITE_HOST || "0.0.0.0";
 const NSITE_PORT = process.env.NSITE_PORT ? parseInt(process.env.NSITE_PORT) : 3000;
 const HOST = `${NSITE_HOST}:${NSITE_PORT}`;
 
+const ENABLE_SCREENSHOTS = process.env.SCREENSHOTS_DIR !== "false";
 const SCREENSHOTS_DIR = process.env.SCREENSHOTS_DIR || "./screenshots";
 
 export {
@@ -39,5 +40,6 @@ export {
   NSITE_HOST,
   NSITE_PORT,
   HOST,
+  ENABLE_SCREENSHOTS,
   SCREENSHOTS_DIR,
 };

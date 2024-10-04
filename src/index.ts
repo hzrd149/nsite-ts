@@ -13,7 +13,15 @@ import send from "koa-send";
 import { resolveNpubFromHostname } from "./helpers/dns.js";
 import { getNsiteBlobs, parseNsiteEvent } from "./events.js";
 import { downloadFile, getUserBlossomServers } from "./blossom.js";
-import { BLOSSOM_SERVERS, HOST, NGINX_CACHE_DIR, NSITE_HOST, NSITE_PORT, SUBSCRIPTION_RELAYS } from "./env.js";
+import {
+  BLOSSOM_SERVERS,
+  ENABLE_SCREENSHOTS,
+  HOST,
+  NGINX_CACHE_DIR,
+  NSITE_HOST,
+  NSITE_PORT,
+  SUBSCRIPTION_RELAYS,
+} from "./env.js";
 import { userDomains, userRelays, userServers } from "./cache.js";
 import { invalidatePubkeyPath } from "./nginx.js";
 import pool, { getUserOutboxes, subscribeForEvents } from "./nostr.js";
@@ -151,17 +159,19 @@ try {
 }
 
 // get screenshots for websites
-app.use(async (ctx, next) => {
-  if (ctx.method === "GET" && ctx.path.startsWith("/screenshot")) {
-    const [pubkey, etx] = basename(ctx.path).split(".");
+if (ENABLE_SCREENSHOTS) {
+  app.use(async (ctx, next) => {
+    if (ctx.method === "GET" && ctx.path.startsWith("/screenshot")) {
+      const [pubkey, etx] = basename(ctx.path).split(".");
 
-    if (pubkey) {
-      if (!(await hasScreenshot(pubkey))) await takeScreenshot(pubkey);
+      if (pubkey) {
+        if (!(await hasScreenshot(pubkey))) await takeScreenshot(pubkey);
 
-      await send(ctx, getScreenshotPath(pubkey));
-    } else throw Error("Missing pubkey");
-  } else return next();
-});
+        await send(ctx, getScreenshotPath(pubkey));
+      } else throw Error("Missing pubkey");
+    } else return next();
+  });
+}
 
 app.listen({ host: NSITE_HOST, port: NSITE_PORT }, () => {
   console.log("Started on port", HOST);
@@ -180,7 +190,7 @@ if (SUBSCRIPTION_RELAYS.length > 0) {
         }
 
         // invalidate screenshot for nsite
-        if (nsite.path === "/" || nsite.path === "/index.html") {
+        if ((ENABLE_SCREENSHOTS && nsite.path === "/") || nsite.path === "/index.html") {
           await removeScreenshot(nsite.pubkey);
         }
       }

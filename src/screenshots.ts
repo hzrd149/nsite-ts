@@ -1,5 +1,5 @@
 import { nip19 } from "nostr-tools";
-import puppeteer from "puppeteer";
+import puppeteer, { PuppeteerLaunchOptions } from "puppeteer";
 import { join } from "path";
 import pfs from "fs/promises";
 
@@ -25,7 +25,12 @@ export async function hasScreenshot(pubkey: string) {
 export async function takeScreenshot(pubkey: string) {
   console.log(`${pubkey}: Generating screenshot`);
 
-  const browser = await puppeteer.launch();
+  const opts: PuppeteerLaunchOptions = {
+    args: ["--no-sandbox"],
+  };
+  if (process.env.PUPPETEER_SKIP_DOWNLOAD) opts.executablePath = "google-chrome-stable";
+
+  const browser = await puppeteer.launch(opts);
   const page = await browser.newPage();
   const url = new URL(`http://${nip19.npubEncode(pubkey)}.localhost:${NSITE_PORT}`);
   await page.goto(url.toString());
@@ -36,5 +41,6 @@ export async function takeScreenshot(pubkey: string) {
 export async function removeScreenshot(pubkey: string) {
   try {
     await pfs.rm(getScreenshotPath(pubkey));
+    console.log(`${pubkey}: Removed screenshot`);
   } catch (error) {}
 }
