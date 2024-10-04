@@ -5,16 +5,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>nsite</title>
 
-    <link rel="stylesheet" href="/lib/normalize.css" />
-    <link rel="stylesheet" href="/lib/milligram.css" />
-    <script src="/lib/nostr-name.js"></script>
-    <script src="/lib/nostr-picture.js"></script>
-
     <script type="importmap">
       {
         "imports": {
           "blossom-client-sdk": "https://esm.run/blossom-client-sdk",
-          "nostr-tools": "https://esm.run/nostr-tools"
+          "nostr-tools": "https://esm.run/nostr-tools",
+          "lit": "https://esm.run/lit",
+          "lit/directives/repeat.js": "https://esm.run/lit/directives/repeat.js"
         }
       }
     </script>
@@ -24,25 +21,9 @@
         width: 100%;
       }
     </style>
+    <script type="module" src="./main.js"></script>
   </head>
   <body>
-    <div class="container">
-      <img src="/logo.jpg" style="max-height: 2in" />
-      <h1>nsite</h1>
-      <a class="navbar-item" href="https://github.com/hzrd149/nsite-ts" target="_blank">Source Code</a>
-
-      <h2 class="subtitle is-2">Latest nsites:</h2>
-      <div id="sites" style="display: flex; flex-direction: column; gap: 0.5em"></div>
-    </div>
-
-    <template id="site">
-      <a class="card nsite-link" style="display: flex; flex-direction: column">
-        <nostr-picture style="max-width: 48px; max-height: 48px; overflow: hidden"></nostr-picture>
-        <nostr-name class="title is-4"></nostr-name>
-        <time datetime="2016-1-1">11:09 PM - 1 Jan 2016</time>
-      </a>
-    </template>
-
-    <script type="module" src="./main.js"></script>
+    <nsite-app></nsite-app>
   </body>
 </html>

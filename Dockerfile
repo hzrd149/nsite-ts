@@ -39,10 +39,12 @@ COPY ./public ./public
 COPY tor-and-i2p.pac proxy.pac
 
 VOLUME [ "/var/cache/nginx" ]
+VOLUME [ "/screenshots" ]
 
 EXPOSE 80 3000
 ENV NSITE_PORT="3000"
 ENV NGINX_CACHE_DIR="/var/cache/nginx"
+ENV SCREENSHOTS_DIR="/screenshots"
 
 COPY docker-entrypoint.sh /
 RUN chmod +x /docker-entrypoint.sh

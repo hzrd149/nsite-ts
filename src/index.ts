@@ -2,21 +2,22 @@
 import "./polyfill.js";
 import Koa from "koa";
 import serve from "koa-static";
-import path from "node:path";
+import path, { basename } from "node:path";
 import cors from "@koa/cors";
 import fs from "node:fs";
 import { fileURLToPath } from "node:url";
 import mime from "mime";
 import morgan from "koa-morgan";
+import send from "koa-send";
 
 import { resolveNpubFromHostname } from "./helpers/dns.js";
 import { getNsiteBlobs, parseNsiteEvent } from "./events.js";
 import { downloadFile, getUserBlossomServers } from "./blossom.js";
-import { BLOSSOM_SERVERS, NGINX_CACHE_DIR, SUBSCRIPTION_RELAYS } from "./env.js";
+import { BLOSSOM_SERVERS, HOST, NGINX_CACHE_DIR, NSITE_HOST, NSITE_PORT, SUBSCRIPTION_RELAYS } from "./env.js";
 import { userDomains, userRelays, userServers } from "./cache.js";
-import { NSITE_KIND } from "./const.js";
 import { invalidatePubkeyPath } from "./nginx.js";
 import pool, { getUserOutboxes, subscribeForEvents } from "./nostr.js";
+import { getScreenshotPath, hasScreenshot, removeScreenshot, takeScreenshot } from "./screenshots.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -43,7 +44,7 @@ app.use(async (ctx, next) => {
   } catch (err) {
     console.log(err);
     ctx.status = 500;
-    ctx.body = { message: "Something went wrong" };
+    if (err instanceof Error) ctx.body = { message: err.message };
   }
 });
 
@@ -83,6 +84,10 @@ app.use(async (ctx, next) => {
         console.log(`${pubkey}: Failed to find relays`);
       }
     }
+
+    relays.push(...SUBSCRIPTION_RELAYS);
+
+    if (relays.length === 0) throw new Error("No nostr relays");
 
     console.log(`${pubkey}: Searching for ${ctx.path}`);
     const blobs = await getNsiteBlobs(pubkey, ctx.path, relays);
@@ -145,26 +150,39 @@ try {
   app.use(serve(www));
 }
 
-app.listen(
-  {
-    port: process.env.NSITE_PORT || 3000,
-    host: process.env.NSITE_HOST || "0.0.0.0",
-  },
-  () => {
-    console.log("Started on port", process.env.PORT || 3000);
-  },
-);
+// get screenshots for websites
+app.use(async (ctx, next) => {
+  if (ctx.method === "GET" && ctx.path.startsWith("/screenshot")) {
+    const [pubkey, etx] = basename(ctx.path).split(".");
 
-// invalidate nginx cache on new events
-if (NGINX_CACHE_DIR && SUBSCRIPTION_RELAYS.length > 0) {
+    if (pubkey) {
+      if (!(await hasScreenshot(pubkey))) await takeScreenshot(pubkey);
+
+      await send(ctx, getScreenshotPath(pubkey));
+    } else throw Error("Missing pubkey");
+  } else return next();
+});
+
+app.listen({ host: NSITE_HOST, port: NSITE_PORT }, () => {
+  console.log("Started on port", HOST);
+});
+
+// invalidate nginx cache and screenshots on new events
+if (SUBSCRIPTION_RELAYS.length > 0) {
   console.log(`Listening for new nsite events`);
-
   subscribeForEvents(SUBSCRIPTION_RELAYS, async (event) => {
     try {
       const nsite = parseNsiteEvent(event);
       if (nsite) {
-        console.log(`${nsite.pubkey}: Invalidating ${nsite.path}`);
-        await invalidatePubkeyPath(nsite.pubkey, nsite.path);
+        if (NGINX_CACHE_DIR) {
+          console.log(`${nsite.pubkey}: Invalidating ${nsite.path}`);
+          await invalidatePubkeyPath(nsite.pubkey, nsite.path);
+        }
+
+        // invalidate screenshot for nsite
+        if (nsite.path === "/" || nsite.path === "/index.html") {
+          await removeScreenshot(nsite.pubkey);
+        }
       }
     } catch (error) {
       console.log(`Failed to invalidate ${event.id}`);

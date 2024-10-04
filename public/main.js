@@ -1,35 +1,58 @@
-import { nip19, SimplePool } from "nostr-tools";
+import { LitElement, html, css } from "lit";
+import { repeat } from "lit/directives/repeat.js";
+import "./components/nsite-card.js";
+import { pool, relays } from "./pool.js";
 
-const relays = ["wss://relay.damus.io", "wss://nos.lol", "wss://nostr.wine"];
-const pool = new SimplePool();
+export class NsiteApp extends LitElement {
+  static properties = {
+    selected: { state: true },
+    status: { state: true, type: String },
+    sites: { state: true, type: Array },
+  };
 
-const seen = new Set();
-function addSite(event) {
-  if (seen.has(event.pubkey)) return;
-  seen.add(event.pubkey);
+  static styles = css`
+    .sites {
+      display: flex;
+      gap: 0.5em;
+      flex-wrap: wrap;
+    }
+  `;
 
-  try {
-    const template = document.getElementById("site");
-    const site = template.content.cloneNode(true);
-    const npub = nip19.npubEncode(event.pubkey);
+  seen = new Set();
+  constructor() {
+    super();
+    this.sites = [];
+  }
 
-    site.querySelector("nostr-name").setAttribute("pubkey", event.pubkey);
-    site.querySelector("nostr-name").textContent = npub.slice(0, 8);
-    site.querySelector("nostr-picture").setAttribute("pubkey", event.pubkey);
+  connectedCallback() {
+    super.connectedCallback();
 
-    site
-      .querySelector(".nsite-link")
-      ?.setAttribute("href", new URL("/", `${location.protocol}//${npub}.${location.host}`).toString());
-    site.querySelector("time").textContent = new Date(event.created_at * 1000).toDateString();
+    pool.subscribeMany(relays, [{ kinds: [34128], "#d": ["/index.html"] }], {
+      onevent: (event) => {
+        if (this.seen.has(event.pubkey)) return;
+        this.seen.add(event.pubkey);
 
-    document.getElementById("sites").appendChild(site);
-  } catch (error) {
-    console.log("Failed to add site", event);
-    console.log(error);
+        this.sites = [...this.sites, event].sort((a, b) => b.created_at - a.created_at);
+      },
+    });
+  }
+
+  render() {
+    return html`<div class="container">
+      <img src="/logo.jpg" style="max-height: 2in" />
+      <h1>nsite</h1>
+      <a class="navbar-item" href="https://github.com/hzrd149/nsite-ts" target="_blank">Source Code</a>
+
+      <h2 class="subtitle is-2">Latest nsites:</h2>
+      <div class="sites">
+        ${repeat(
+          this.sites,
+          (nsite) => nsite.pubkey,
+          (nsite) => html`<nsite-card .nsite="${nsite}"></nsite-card>`,
+        )}
+      </div>
+    </div>`;
   }
 }
 
-console.log("Loading sites");
-pool.subscribeMany(relays, [{ kinds: [34128], "#d": ["/index.html"] }], {
-  onevent: addSite,
-});
+customElements.define("nsite-app", NsiteApp);
