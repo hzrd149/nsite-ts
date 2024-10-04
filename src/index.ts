@@ -110,7 +110,7 @@ app.use(async (ctx, next) => {
 
     // fetch blossom servers if not in cache
     if (!servers) {
-      console.log(`${pubkey}: Searching for blossom servers`);
+      console.log(`${pubkey}: Fetching blossom servers`);
       servers = await getUserBlossomServers(pubkey, relays);
 
       if (servers) {
@@ -137,6 +137,7 @@ app.use(async (ctx, next) => {
         // pass headers along
         if (res.headers["content-length"]) ctx.set("content-length", res.headers["content-length"]);
 
+        ctx.status = 200;
         ctx.body = res;
         return;
       }
