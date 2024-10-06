@@ -27,6 +27,8 @@ const HOST = `${NSITE_HOST}:${NSITE_PORT}`;
 const ENABLE_SCREENSHOTS = process.env.ENABLE_SCREENSHOTS === "true";
 const SCREENSHOTS_DIR = process.env.SCREENSHOTS_DIR || "./screenshots";
 
+const ONION_HOST = process.env.ONION_HOST;
+
 export {
   SUBSCRIPTION_RELAYS,
   LOOKUP_RELAYS,
@@ -42,4 +44,5 @@ export {
   HOST,
   ENABLE_SCREENSHOTS,
   SCREENSHOTS_DIR,
+  ONION_HOST,
 };

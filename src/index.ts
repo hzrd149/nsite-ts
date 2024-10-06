@@ -9,6 +9,7 @@ import { fileURLToPath } from "node:url";
 import mime from "mime";
 import morgan from "koa-morgan";
 import send from "koa-send";
+import { npubEncode } from "nostr-tools/nip19";
 
 import { resolveNpubFromHostname } from "./helpers/dns.js";
 import { getNsiteBlobs, parseNsiteEvent } from "./events.js";
@@ -20,6 +21,7 @@ import {
   NGINX_CACHE_DIR,
   NSITE_HOST,
   NSITE_PORT,
+  ONION_HOST,
   SUBSCRIPTION_RELAYS,
 } from "./env.js";
 import { userDomains, userRelays, userServers } from "./cache.js";
@@ -131,12 +133,19 @@ app.use(async (ctx, next) => {
 
       if (res) {
         const type = mime.getType(blob.path);
-        if (type) ctx.set("Content-Type", type);
+        if (type) ctx.set("content-type", type);
         else if (res.headers["content-type"]) ctx.set("content-type", res.headers["content-type"]);
 
         // pass headers along
         if (res.headers["content-length"]) ctx.set("content-length", res.headers["content-length"]);
         if (res.headers["last-modified"]) ctx.set("last-modified", res.headers["last-modified"]);
+
+        // set Onion-Location header
+        if (ONION_HOST) {
+          const url = new URL(ONION_HOST);
+          url.hostname = npubEncode(pubkey) + "." + url.hostname;
+          ctx.set("Onion-Location", url.toString().replace(/\/$/, ""));
+        }
 
         ctx.status = 200;
         ctx.body = res;
@@ -148,6 +157,17 @@ app.use(async (ctx, next) => {
     ctx.body = "Failed to find blob";
   } else await next();
 });
+
+if (ONION_HOST) {
+  app.use((ctx, next) => {
+    // set Onion-Location header if it was not set before
+    if (!ctx.get("Onion-Location") && ONION_HOST) {
+      ctx.set("Onion-Location", ONION_HOST);
+    }
+
+    return next();
+  });
+}
 
 // serve static files from public
 try {
