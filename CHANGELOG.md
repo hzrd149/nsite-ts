@@ -1,5 +1,11 @@
 # nsite-ts
 
+## 0.4.0
+
+### Minor Changes
+
+- 7c3c9c0: Add ONION_HOST env variable
+
 ## 0.3.0
 
 ### Minor Changes
