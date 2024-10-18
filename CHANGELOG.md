@@ -1,5 +1,11 @@
 # nsite-ts
 
+## 0.5.0
+
+### Minor Changes
+
+- db172d4: Add support for custom 404.html pages
+
 ## 0.4.0
 
 ### Minor Changes
