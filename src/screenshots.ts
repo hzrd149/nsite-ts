@@ -2,6 +2,7 @@ import { nip19 } from "nostr-tools";
 import puppeteer, { PuppeteerLaunchOptions } from "puppeteer";
 import { join } from "path";
 import pfs from "fs/promises";
+import { npubEncode } from "nostr-tools/nip19";
 
 import { NSITE_PORT, SCREENSHOTS_DIR } from "./env.js";
 
@@ -23,7 +24,7 @@ export async function hasScreenshot(pubkey: string) {
 }
 
 export async function takeScreenshot(pubkey: string) {
-  console.log(`${pubkey}: Generating screenshot`);
+  console.log(`${npubEncode(pubkey)}: Generating screenshot`);
 
   const opts: PuppeteerLaunchOptions = {
     args: ["--no-sandbox"],
@@ -41,6 +42,6 @@ export async function takeScreenshot(pubkey: string) {
 export async function removeScreenshot(pubkey: string) {
   try {
     await pfs.rm(getScreenshotPath(pubkey));
-    console.log(`${pubkey}: Removed screenshot`);
+    console.log(`${npubEncode(pubkey)}: Removed screenshot`);
   } catch (error) {}
 }
