@@ -1,5 +1,11 @@
 # nsite-ts
 
+## 0.5.1
+
+### Patch Changes
+
+- ba71f35: bump dependnecies
+
 ## 0.5.0
 
 ### Minor Changes
