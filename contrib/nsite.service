@@ -1,0 +1,13 @@
+[Unit]
+Description=nsite Server
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=/<path-to>/nsite-ts
+ExecStart=/usr/bin/node .
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target

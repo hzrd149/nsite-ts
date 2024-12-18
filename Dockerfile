@@ -29,14 +29,13 @@ RUN chown -R nsite:nsite /app
 
 # Setup nginx
 COPY nginx/nginx.conf /etc/nginx/nginx.conf
-COPY nginx/default.conf /etc/nginx/conf.d/default.conf
+COPY nginx/http.conf /etc/nginx/conf.d/default.conf
 
 # setup nsite
 COPY --from=prod-deps /app/node_modules /app/node_modules
 COPY --from=build ./app/build ./build
 
 COPY ./public ./public
-COPY tor-and-i2p.pac proxy.pac
 
 VOLUME [ "/var/cache/nginx" ]
 
