@@ -8,6 +8,7 @@
   "license": "MIT",
   "scripts": {
     "start": "node build/index.js",
+    "prepack": "tsc",
     "build": "tsc",
     "dev": "nodemon -i '**/data/**' --exec 'node' --loader @swc-node/register/esm src/index.ts",
     "format": "prettier -w ."
@@ -21,10 +22,10 @@
     "@keyv/redis": "^3.0.1",
     "@keyv/sqlite": "^4.0.1",
     "@koa/cors": "^5.0.0",
-    "blossom-client-sdk": "^2.1.0",
+    "blossom-client-sdk": "^2.1.1",
     "dotenv": "^16.4.7",
     "follow-redirects": "^1.15.9",
-    "keyv": "^5.2.2",
+    "keyv": "^5.2.3",
     "koa": "^2.15.3",
     "koa-morgan": "^1.0.1",
     "koa-send": "^5.0.1",
@@ -33,7 +34,7 @@
     "nostr-tools": "^2.10.4",
     "pac-proxy-agent": "^7.1.0",
     "proxy-agent": "^6.5.0",
-    "puppeteer": "^23.11.0",
+    "puppeteer": "^23.11.1",
     "websocket-polyfill": "1.0.0",
     "ws": "^8.18.0",
     "xbytes": "^1.9.1"
@@ -41,7 +42,7 @@
   "devDependencies": {
     "@changesets/cli": "^2.27.11",
     "@swc-node/register": "^1.10.9",
-    "@swc/core": "^1.10.1",
+    "@swc/core": "^1.10.4",
     "@types/better-sqlite3": "^7.6.12",
     "@types/follow-redirects": "^1.14.4",
     "@types/koa": "^2.15.0",
@@ -50,7 +51,7 @@
     "@types/koa-static": "^4.0.4",
     "@types/koa__cors": "^5.0.0",
     "@types/koa__router": "^12.0.4",
-    "@types/node": "^20.17.10",
+    "@types/node": "^20.17.12",
     "@types/proxy-from-env": "^1.0.4",
     "@types/ws": "^8.5.13",
     "nodemon": "^3.1.9",
