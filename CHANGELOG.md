@@ -1,5 +1,11 @@
 # nsite-ts
 
+## 0.5.2
+
+### Patch Changes
+
+- 6704516: Fix package missing build folder
+
 ## 0.5.1
 
 ### Patch Changes
