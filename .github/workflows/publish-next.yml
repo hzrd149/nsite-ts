@@ -11,6 +11,7 @@ jobs:
   release:
     name: Release next
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout Repo
         uses: actions/checkout@v4
@@ -29,6 +30,5 @@ jobs:
       - name: Publish next version
         run: pnpm changeset version --snapshot next && pnpm changeset publish --tag next
         env:
-          HOME: ${{ github.workspace }}
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
