@@ -62,7 +62,7 @@ app.use(async (ctx, next) => {
   let pubkey = await userDomains.get<string | undefined>(ctx.hostname);
 
   // resolve pubkey if not in cache
-  if (!pubkey) {
+  if (pubkey === undefined) {
     console.log(`${ctx.hostname}: Resolving`);
     pubkey = await resolveNpubFromHostname(ctx.hostname);
 
@@ -176,16 +176,6 @@ if (ONION_HOST) {
   });
 }
 
-// serve static files from public
-try {
-  const www = path.resolve(process.cwd(), "public");
-  fs.statSync(www);
-  app.use(serve(www));
-} catch (error) {
-  const www = path.resolve(__dirname, "../public");
-  app.use(serve(www));
-}
-
 // get screenshots for websites
 if (ENABLE_SCREENSHOTS) {
   app.use(async (ctx, next) => {
@@ -200,6 +190,21 @@ if (ENABLE_SCREENSHOTS) {
       } else throw Error("Missing pubkey");
     } else return next();
   });
+}
+
+// serve static files from public
+const serveOptions: serve.Options = {
+  hidden: true,
+  maxAge: 60 * 60 * 1000,
+  index: "index.html",
+};
+try {
+  const www = path.resolve(process.cwd(), "public");
+  fs.statSync(www);
+  app.use(serve(www, serveOptions));
+} catch (error) {
+  const www = path.resolve(__dirname, "../public");
+  app.use(serve(www, serveOptions));
 }
 
 app.listen({ host: NSITE_HOST, port: NSITE_PORT }, () => {
