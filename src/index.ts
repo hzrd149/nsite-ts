@@ -10,6 +10,8 @@ import mime from "mime";
 import morgan from "koa-morgan";
 import send from "koa-send";
 import { npubEncode } from "nostr-tools/nip19";
+import { spawn } from "node:child_process";
+import { nip19 } from "nostr-tools";
 
 import { resolveNpubFromHostname } from "./helpers/dns.js";
 import { getNsiteBlobs, parseNsiteEvent } from "./events.js";
@@ -19,6 +21,8 @@ import {
   ENABLE_SCREENSHOTS,
   HOST,
   NGINX_CACHE_DIR,
+  NSITE_HOMEPAGE,
+  NSITE_HOMEPAGE_DIR,
   NSITE_HOST,
   NSITE_PORT,
   ONION_HOST,
@@ -64,12 +68,12 @@ app.use(async (ctx, next) => {
 
   // resolve pubkey if not in cache
   if (pubkey === undefined) {
-    console.log(`${ctx.hostname}: Resolving`);
+    logger(`${ctx.hostname}: Resolving`);
     pubkey = await resolveNpubFromHostname(ctx.hostname);
 
     if (pubkey) {
       await userDomains.set(ctx.hostname, pubkey);
-      console.log(`${ctx.hostname}: Found ${pubkey}`);
+      logger(`${ctx.hostname}: Found ${pubkey}`);
     } else {
       await userDomains.set(ctx.hostname, "");
     }
@@ -194,14 +198,48 @@ if (ENABLE_SCREENSHOTS) {
   });
 }
 
+// download homepage
+if (NSITE_HOMEPAGE) {
+  try {
+    const log = logger.extend("homepage");
+    // create the public dir
+    try {
+      fs.mkdirSync(NSITE_HOMEPAGE_DIR);
+    } catch (error) {}
+
+    const bin = (await import.meta.resolve("nsite-cli")).replace("file://", "");
+
+    const decode = nip19.decode(NSITE_HOMEPAGE);
+    if (decode.type !== "nprofile") throw new Error("NSITE_HOMEPAGE must be a valid nprofile");
+
+    // use nsite-cli to download the homepage
+    const args = [bin, "download", NSITE_HOMEPAGE_DIR, nip19.npubEncode(decode.data.pubkey)];
+    if (decode.data.relays) args.push("--relays", decode.data.relays?.join(","));
+
+    const child = spawn("node", args, { stdio: "pipe" });
+
+    child.on("spawn", () => log("Downloading..."));
+    child.stdout.on("data", (line) => log(line.toString("utf-8")));
+    child.on("error", (e) => log("Failed", e));
+    child.on("close", (code) => {
+      if (code === 0) log("Finished");
+      else log("Failed");
+    });
+  } catch (error) {
+    console.log(`Failed to download homepage`);
+    console.log(error);
+  }
+}
+
 // serve static files from public
 const serveOptions: serve.Options = {
   hidden: true,
   maxAge: 60 * 60 * 1000,
   index: "index.html",
 };
+
 try {
-  const www = path.resolve(process.cwd(), "public");
+  const www = NSITE_HOMEPAGE_DIR;
   fs.statSync(www);
   app.use(serve(www, serveOptions));
 } catch (error) {
@@ -210,19 +248,19 @@ try {
 }
 
 app.listen({ host: NSITE_HOST, port: NSITE_PORT }, () => {
-  console.log("Started on port", HOST);
+  logger("Started on port", HOST);
 });
 
 // invalidate nginx cache and screenshots on new events
 if (SUBSCRIPTION_RELAYS.length > 0) {
-  console.log(`Listening for new nsite events on: ${SUBSCRIPTION_RELAYS.join(", ")}`);
+  logger(`Listening for new nsite events on: ${SUBSCRIPTION_RELAYS.join(", ")}`);
 
   subscribeForEvents(SUBSCRIPTION_RELAYS, async (event) => {
     try {
       const nsite = parseNsiteEvent(event);
       if (nsite) {
         if (NGINX_CACHE_DIR) {
-          console.log(`${nsite.pubkey}: Invalidating ${nsite.path}`);
+          logger(`${nsite.pubkey}: Invalidating ${nsite.path}`);
           await invalidatePubkeyPath(nsite.pubkey, nsite.path);
         }
 
@@ -243,7 +281,7 @@ process.on("unhandledRejection", (reason, promise) => {
 });
 
 async function shutdown() {
-  console.log("Shutting down...");
+  logger("Shutting down...");
   pool.destroy();
   process.exit(0);
 }

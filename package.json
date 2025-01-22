@@ -33,6 +33,7 @@
     "koa-static": "^5.0.0",
     "mime": "^4.0.6",
     "nostr-tools": "^2.10.4",
+    "nsite-cli": "^0.1.14",
     "pac-proxy-agent": "^7.1.0",
     "proxy-agent": "^6.5.0",
     "puppeteer": "^23.11.1",

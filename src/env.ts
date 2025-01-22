@@ -1,6 +1,9 @@
 import "dotenv/config";
 import xbytes from "xbytes";
 
+const NSITE_HOMEPAGE = process.env.NSITE_HOMEPAGE;
+const NSITE_HOMEPAGE_DIR = process.env.NSITE_HOMEPAGE_DIR || "public";
+
 const LOOKUP_RELAYS = process.env.LOOKUP_RELAYS?.split(",").map((u) => u.trim()) ?? [
   "wss://user.kindpag.es/",
   "wss://purplepag.es/",
@@ -30,6 +33,8 @@ const SCREENSHOTS_DIR = process.env.SCREENSHOTS_DIR || "./screenshots";
 const ONION_HOST = process.env.ONION_HOST;
 
 export {
+  NSITE_HOMEPAGE,
+  NSITE_HOMEPAGE_DIR,
   SUBSCRIPTION_RELAYS,
   LOOKUP_RELAYS,
   BLOSSOM_SERVERS,
