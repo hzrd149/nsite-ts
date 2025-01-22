@@ -1,5 +1,17 @@
 # nsite-ts
 
+## 0.6.0
+
+### Minor Changes
+
+- c84396e: Replace homepage with simple welcome page
+- c84396e: Add option to download another nsite as a homepage
+- 2ac847f: Add colors to logging
+
+### Patch Changes
+
+- 5be0822: Fix serving hidden files in .well-known
+
 ## 0.5.2
 
 ### Patch Changes
