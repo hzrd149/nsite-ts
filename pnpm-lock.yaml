@@ -23,12 +23,15 @@ importers:
       blossom-client-sdk:
         specifier: ^2.1.1
         version: 2.1.1
+      debug:
+        specifier: ^4.4.0
+        version: 4.4.0(supports-color@5.5.0)
       dotenv:
         specifier: ^16.4.7
         version: 16.4.7
       follow-redirects:
         specifier: ^1.15.9
-        version: 1.15.9
+        version: 1.15.9(debug@4.4.0)
       keyv:
         specifier: ^5.2.3
         version: 5.2.3
@@ -81,6 +84,9 @@ importers:
       '@types/better-sqlite3':
         specifier: ^7.6.12
         version: 7.6.12
+      '@types/debug':
+        specifier: ^4.1.12
+        version: 4.1.12
       '@types/follow-redirects':
         specifier: ^1.14.4
         version: 1.14.4
@@ -477,6 +483,9 @@ packages:
   '@types/cookies@0.9.0':
     resolution: {integrity: sha512-40Zk8qR147RABiQ7NQnBzWzDcjKzNrntB5BAmeGCb2p/MIyOE+4BVvc17wumsUqUw00bJYqoXFHYygQnEFh4/Q==}
 
+  '@types/debug@4.1.12':
+    resolution: {integrity: sha512-vIChWdVG3LG1SMxEvI/AK+FWJthlrqlTu7fbrlywTkkaONwk/UAGaULXRlf8vkzFBLVm0zkMdCquhL5aOjhXPQ==}
+
   '@types/express-serve-static-core@5.0.5':
     resolution: {integrity: sha512-GLZPrd9ckqEBFMcVM/qRFAP0Hg3qiVEojgEFsx/N/zKXsBzbGF6z5FBDpZ0+Xhp1xr+qRZYjfGr1cWHB9oFHSA==}
 
@@ -521,6 +530,9 @@ packages:
 
   '@types/morgan@1.9.9':
     resolution: {integrity: sha512-iRYSDKVaC6FkGSpEVVIvrRGw0DfJMiQzIn3qr2G5B3C//AWkulhXgaBd7tS9/J79GWSYMTHGs7PfI5b3Y8m+RQ==}
+
+  '@types/ms@2.1.0':
+    resolution: {integrity: sha512-GsCCIZDE/p3i96vtEqx+7dBUGXrc7zeSK3wwPHIaRThS+9OhWIXRqzs4d6k1SVU8g91DrNRWxWUGhp5KXQb2VA==}
 
   '@types/node@12.20.55':
     resolution: {integrity: sha512-J8xLz7q2OFulZ2cyGTLE1TbbZcjpno7FaN6zdJNrgAdrJ+DZzh/uFR6YrTb4C+nXakvud8Q4+rbhoIWlYQbUFQ==}
@@ -2437,6 +2449,10 @@ snapshots:
       '@types/keygrip': 1.0.6
       '@types/node': 20.17.14
 
+  '@types/debug@4.1.12':
+    dependencies:
+      '@types/ms': 2.1.0
+
   '@types/express-serve-static-core@5.0.5':
     dependencies:
       '@types/node': 20.17.14
@@ -2503,6 +2519,8 @@ snapshots:
   '@types/morgan@1.9.9':
     dependencies:
       '@types/node': 20.17.14
+
+  '@types/ms@2.1.0': {}
 
   '@types/node@12.20.55': {}
 
@@ -2967,7 +2985,9 @@ snapshots:
       locate-path: 5.0.0
       path-exists: 4.0.0
 
-  follow-redirects@1.15.9: {}
+  follow-redirects@1.15.9(debug@4.4.0):
+    optionalDependencies:
+      debug: 4.4.0(supports-color@5.5.0)
 
   fresh@0.5.2: {}
 

@@ -27,6 +27,7 @@ import {
 import { userDomains, userRelays, userServers } from "./cache.js";
 import { invalidatePubkeyPath } from "./nginx.js";
 import pool, { getUserOutboxes, subscribeForEvents } from "./nostr.js";
+import logger from "./logger.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -76,22 +77,23 @@ app.use(async (ctx, next) => {
 
   if (pubkey) {
     const npub = npubEncode(pubkey);
+    const log = logger.extend(npub);
     ctx.state.pubkey = pubkey;
 
     let relays = await userRelays.get<string[] | undefined>(pubkey);
 
     // fetch relays if not in cache
     if (!relays) {
-      console.log(`${npub}: Fetching relays`);
+      log(`Fetching relays`);
 
       relays = await getUserOutboxes(pubkey);
       if (relays) {
         await userRelays.set(pubkey, relays);
-        console.log(`${npub}: Found ${relays.length} relays`);
+        log(`Found ${relays.length} relays`);
       } else {
         relays = [];
         await userServers.set(pubkey, [], 30_000);
-        console.log(`${npub}: Failed to find relays`);
+        log(`Failed to find relays`);
       }
     }
 
@@ -99,17 +101,17 @@ app.use(async (ctx, next) => {
 
     if (relays.length === 0) throw new Error("No nostr relays");
 
-    console.log(`${npub}: Searching for ${ctx.path}`);
+    log(`Searching for ${ctx.path}`);
     let blobs = await getNsiteBlobs(pubkey, ctx.path, relays);
 
     if (blobs.length === 0) {
       // fallback to custom 404 page
-      console.log(`${npub}: Looking for custom 404 page`);
+      log(`Looking for custom 404 page`);
       blobs = await getNsiteBlobs(pubkey, "/404.html", relays);
     }
 
     if (blobs.length === 0) {
-      console.log(`${npub}: Found 0 events`);
+      log(`Found 0 events`);
       ctx.status = 404;
       ctx.body = "Not Found";
       return;
@@ -119,16 +121,16 @@ app.use(async (ctx, next) => {
 
     // fetch blossom servers if not in cache
     if (!servers) {
-      console.log(`${npub}: Fetching blossom servers`);
+      log(`Fetching blossom servers`);
       servers = await getUserBlossomServers(pubkey, relays);
 
       if (servers) {
         await userServers.set(pubkey, servers);
-        console.log(`${npub}: Found ${servers.length} servers`);
+        log(`Found ${servers.length} servers`);
       } else {
         servers = [];
         await userServers.set(pubkey, [], 30_000);
-        console.log(`${npub}: Failed to find servers`);
+        log(`Failed to find servers`);
       }
     }
 
@@ -213,7 +215,8 @@ app.listen({ host: NSITE_HOST, port: NSITE_PORT }, () => {
 
 // invalidate nginx cache and screenshots on new events
 if (SUBSCRIPTION_RELAYS.length > 0) {
-  console.log(`Listening for new nsite events`);
+  console.log(`Listening for new nsite events on: ${SUBSCRIPTION_RELAYS.join(", ")}`);
+
   subscribeForEvents(SUBSCRIPTION_RELAYS, async (event) => {
     try {
       const nsite = parseNsiteEvent(event);
