@@ -259,8 +259,9 @@ if (SUBSCRIPTION_RELAYS.length > 0) {
     try {
       const nsite = parseNsiteEvent(event);
       if (nsite) {
+        const log = logger.extend(nip19.npubEncode(nsite.pubkey));
         if (NGINX_CACHE_DIR) {
-          logger(`${nsite.pubkey}: Invalidating ${nsite.path}`);
+          log(`Invalidating ${nsite.path}`);
           await invalidatePubkeyPath(nsite.pubkey, nsite.path);
         }
 
